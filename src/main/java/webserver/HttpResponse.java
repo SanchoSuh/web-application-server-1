@@ -12,6 +12,10 @@ public class HttpResponse {
 	private String returnCode;
 	private int contentLength;
 	private String contentType;
+		
+	public HttpResponse(String returnCode) {
+		this.returnCode = returnCode;
+	}
 	
 	public HttpResponse(String returnCode, int contentLength, String contentType) {
 		this.returnCode = returnCode;
@@ -20,12 +24,34 @@ public class HttpResponse {
 	}
 	
 	public void response(DataOutputStream dos, byte[] body) {
-		responseHeader(dos);
+		switch(this.returnCode) {
+		case "200":
+			response200Header(dos);
+			break;
+		default :
+			response200Header(dos);
+			break;
+		}
+		
 		responseBody(dos, body);
 	}
 	
-	private void responseHeader(DataOutputStream dos) {
+	public void redirect(DataOutputStream dos, String url) {
+		this.returnCode = "302";
+		
+		try {
+			log.debug("In redirect");
+			dos.writeBytes("HTTP/1.1 " + this.returnCode + " Found \r\n");
+            dos.writeBytes("Location: " + url + "\r\n");
+            dos.flush();
+		} catch(IOException e) {
+			log.error(e.getMessage());
+		}
+	}
+
+	private void response200Header(DataOutputStream dos) {
         try {
+        	log.debug("In response200Header()");
             dos.writeBytes("HTTP/1.1 " + this.returnCode + " OK \r\n");
             dos.writeBytes("Content-Type: " + this.contentType + ";charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + this.contentLength + "\r\n");

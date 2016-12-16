@@ -38,17 +38,55 @@ public class RequestHandler extends Thread {
 			HttpRequest request = new HttpRequest(br);
 			
 			String file = "";
+			User user;
+			HttpResponse response;
 			
 			if(request.getMethod().equals("GET")) {
+				log.debug("In case of HTTP GET");
 				file = request.getUrl();
+				
+				URLHandler urlHandler = new URLHandler(request);
+				
+				if(urlHandler.resolve().equals("root")) {
+					file = "/index.html";
+				}
+				
+				if(urlHandler.resolve().equals("user")) {
+					user = new User(request.getParam("userId"), request.getParam("password"), request.getParam("name"), request.getParam("email"));
+					log.debug(user.toString());
+				}
+				
+				
+				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
+				DataOutputStream dos = new DataOutputStream(out);
+				
+				response = new HttpResponse("200", body.length, "text/html");
+				response.response(dos, body);
+				
 			}
 			
+			if(request.getMethod().equals("POST")) {
+				log.debug("In case of HTTP POST");
+				
+				URLHandler urlHandler = new URLHandler(request);
+				DataOutputStream dos = new DataOutputStream(out);
+				
+				if(urlHandler.resolve().equals("user")) {
+					user = new User(request.getParam("userId"), request.getParam("password"), request.getParam("name"), request.getParam("email"));
+					log.debug(user.toString());
+					
+					response = new HttpResponse("302");
+					response.redirect(dos, "/");
+				}
+			}
+			
+			/*
 			byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
 			DataOutputStream dos = new DataOutputStream(out);
 			
-			HttpResponse response = new HttpResponse("200", body.length, "text/html");
+			response = new HttpResponse("200", body.length, "text/html");
 			response.response(dos, body);
-			
+			*/
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}

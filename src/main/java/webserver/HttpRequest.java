@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import model.User;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class HttpRequest {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -18,21 +19,24 @@ public class HttpRequest {
 	private int returnCode;
 	private Map<String, String> params;
 	private int contentLength;
+	private String body;
 	
-	public HttpRequest(String method, String url, int returnCode, Map<String, String> params, int contentLength) {
+	public HttpRequest(String method, String url, int returnCode, Map<String, String> params, int contentLength, String body) {
 		this.method = method;
 		this.url = url;
 		this.returnCode = returnCode;
 		this.params = params;
 		this.contentLength = contentLength;
+		this.body = body;
 	}
 	
 	public HttpRequest(BufferedReader br) {
 		
 		try {
 			String readLine = br.readLine();
-			
+						
 			while(!"".equals(readLine)) {
+				log.debug(readLine);
 				String[] tokens = readLine.split(" ");
 				
 				if(tokens[0].equals("GET")) {					
@@ -50,6 +54,17 @@ public class HttpRequest {
 				}
 				
 				readLine = br.readLine();
+			}
+			
+			log.debug("Here, out of while");
+			
+			if(this.method.equals("POST")) {
+				//readLine = br.readLine();
+				//log.debug(readLine);
+				
+				body = IOUtils.readData(br, this.contentLength);
+				log.debug(body);
+				this.params = HttpRequestUtils.parseQueryString(body);
 			}
 		}catch (IOException e) {
 			log.debug("InHttpRequest : readLine IO exception");
@@ -74,6 +89,7 @@ public class HttpRequest {
 			this.params = HttpRequestUtils.parseQueryString(queryString);
 		}
 	}
+	
 
 	public String getParam(String key) {
 		return this.params.get(key);
