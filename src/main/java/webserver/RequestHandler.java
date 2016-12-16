@@ -22,7 +22,7 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
-
+    
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
     }
@@ -32,55 +32,58 @@ public class RequestHandler extends Thread {
 		
 		try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
 			// TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-			String fileName = null;
+			Reader reader = new InputStreamReader(in);
+			BufferedReader br = new BufferedReader(reader);
 			
-			fileName = getHtmlFromHttp(in);
-			System.out.println(fileName);
+			HttpRequest request = new HttpRequest(br);
 			
-			//readHTMLFile(fileName);
+			String file = "";
 			
+			if(request.getMethod().equals("GET")) {
+				file = request.getUrl();
+			}
+			
+			byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
 			DataOutputStream dos = new DataOutputStream(out);
 			
-			byte[] body = Files.readAllBytes(new File("./webapp"+fileName).toPath());
+			HttpResponse response = new HttpResponse("200", body.length, "text/html");
+			response.response(dos, body);
 			
-			response200Header(dos, body.length);
-			responseBody(dos, body);
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	}
 	
-	private String getHtmlFromHttp(InputStream in) {
-		Reader reader = new InputStreamReader(in);
-		BufferedReader br = new BufferedReader(reader);
-		
-		String gotHTMLFile = null;
+	
+	private String readHttpMessage(BufferedReader br) {
+
+		String parsedLine = null;
 		
 		try {
 			String line = br.readLine();
+			log.debug(line);
 			
 			while(!"".equals(line)) {
-				gotHTMLFile = parseLine(line);
+				parsedLine = parseLine(line);
+				log.debug(parsedLine);
 				
-				if(gotHTMLFile.contains("/user/create")) {
-					String parameters = gotHTMLFile;
-					int index = parameters.indexOf("?");
-					String queryString = parameters.substring(index + 1);
+				if(parsedLine.contains("/user/create")) {
+					int index = parsedLine.indexOf("?");
+					String queryString = parsedLine.substring(index + 1);
 					Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
 					log.debug(queryString);
-					log.debug(params.toString());
-					log.debug(params.get("userId"));
-					log.debug(params.get("name"));
 					
 					User user = new User(params);
 					System.out.println("#### Here #####" + user.getUserId() + " " + user.getName() + " " + user.getEmail());
 				}
-				if(gotHTMLFile != null) {
-					return gotHTMLFile;
+				if(parsedLine != null) {
+					return parsedLine;
 				}
 				line = br.readLine();
 			}
-		} catch(IOException e) {}		
+		} catch(IOException e) {
+			log.debug(e.getMessage());
+		}		
 		
 		return null;
 	}
@@ -89,24 +92,10 @@ public class RequestHandler extends Thread {
 		String[] tokens = line.split(" ");
 			
 		for(int i=0 ; i < tokens.length ; i++) {
-			System.out.println(tokens[i]);
+			log.debug(tokens[i]);
 			
 			if(tokens[i].equals("GET")) {
 				return tokens[i+1];
-			}
-			
-			if(tokens[i].equals("POST")) {
-				String parameters = tokens[i+1];
-				int index = parameters.indexOf("?");
-				String queryString = parameters.substring(index + 1);
-				Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
-				log.debug(queryString);
-				log.debug(params.toString());
-				log.debug(params.get("userId"));
-				log.debug(params.get("name"));
-				
-				User user = new User(params);
-				System.out.println("#### Here #####" + user.getUserId() + user.getName() + user.getEmail());
 			}
 		}
 		
