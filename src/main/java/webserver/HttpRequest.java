@@ -21,10 +21,13 @@ public class HttpRequest {
 	private int contentLength;
 	private String body;
 	
+	public static boolean loginCookie;
+	
 	public HttpRequest(String method, String url, int returnCode, Map<String, String> params, int contentLength, String body) {
 		this.method = method;
 		this.url = url;
 		this.returnCode = returnCode;
+		this.loginCookie = false;
 		this.params = params;
 		this.contentLength = contentLength;
 		this.body = body;
@@ -36,7 +39,7 @@ public class HttpRequest {
 			String readLine = br.readLine();
 						
 			while(!"".equals(readLine)) {
-				//log.debug(readLine);
+				log.debug(readLine);
 				String[] tokens = readLine.split(" ");
 				
 				if(tokens[0].equals("GET")) {					
@@ -51,6 +54,10 @@ public class HttpRequest {
 				
 				if(tokens[0].startsWith("Content-Length")) {
 					this.contentLength = Integer.parseInt(tokens[1]);
+				}
+				
+				if(readLine.startsWith("Cookie: logined=true")) {
+					this.loginCookie = true;
 				}
 				
 				readLine = br.readLine();
@@ -71,7 +78,7 @@ public class HttpRequest {
 	}
 	
 	private void parseGetParam(String httpGetUrl) {
-		log.debug(httpGetUrl);
+		//log.debug(httpGetUrl);
 				
 		int index = httpGetUrl.indexOf("?");
 		
@@ -105,4 +112,5 @@ public class HttpRequest {
 	public int getReturnCode() {
 		return returnCode;
 	}
+	
 }

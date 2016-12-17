@@ -40,7 +40,6 @@ public class RequestHandler extends Thread {
 			HttpRequest request = new HttpRequest(br);
 			
 			String file = "";
-			String contentType = "";
 			HttpResponse response;
 			
 			URLHandler urlHandler = new URLHandler(request);
@@ -48,12 +47,9 @@ public class RequestHandler extends Thread {
 			
 			if(domain.equals("root")) {
 				file = "/index.html";
-				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-				contentType = getContentType(file);
-				response = new HttpResponse("200", body.length, contentType);
-				
 				DataOutputStream dos = new DataOutputStream(out);
-				response.response(dos, body);
+				
+				responseGetFile(dos, file);
 			}
 				
 			if(domain.equals("user")) {
@@ -65,10 +61,7 @@ public class RequestHandler extends Thread {
 				DataOutputStream dos = new DataOutputStream(out);
 				
 				if(!file.startsWith("redirect:")) {
-					byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-					contentType = getContentType(file);
-					response = new HttpResponse("200", body.length, contentType);
-					response.response(dos, body);
+					responseGetFile(dos, file);
 					
 					//log.debug(response.toString());
 				} else {
@@ -76,7 +69,14 @@ public class RequestHandler extends Thread {
 					String subFile = file.substring(index + 1);
 					
 					response = new HttpResponse("302");
-					response.redirect(dos, subFile);
+					
+					if(subFile.contains("/login_failed")) {
+						response.redirectLogin(dos, subFile, false);
+					} else if(userController.getCookie()) {
+						response.redirectLogin(dos, subFile, true);
+					} else {
+						response.redirect(dos, subFile);
+					}
 					//log.debug(response.toString());
 				}
 				
@@ -84,18 +84,26 @@ public class RequestHandler extends Thread {
 			
 			if(domain.equals("css")) {
 				file = request.getUrl();
-				
-				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-				contentType = getContentType(file);
-				response = new HttpResponse("200", body.length, contentType);
-				
 				DataOutputStream dos = new DataOutputStream(out);
-				response.response(dos, body);
+				responseGetFile(dos, file);
 			}
 			
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	private void responseGetFile(DataOutputStream dos, String file) {
+		String contentType = "";
+		HttpResponse response;
+		
+		try {
+			byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
+			contentType = getContentType(file);
+			response = new HttpResponse("200", body.length, contentType);
+			
+			response.response(dos, body);
+		}catch(IOException e) {}
 	}
 
 	private String getContentType(String file) {

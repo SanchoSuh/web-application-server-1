@@ -48,6 +48,23 @@ public class HttpResponse {
 			log.error(e.getMessage());
 		}
 	}
+	
+	public void redirectLogin(DataOutputStream dos, String url, boolean success) {
+		this.returnCode = "302";
+		
+		try {
+			log.debug("In redirectLogin");
+			dos.writeBytes("HTTP/1.1 " + this.returnCode + " Found \r\n");
+            dos.writeBytes("Location: " + url + "\r\n");
+            if(success == true)
+            	dos.writeBytes("Set-Cookie: logined=true\r\n");
+            else
+            	dos.writeBytes("Set-Cookie: logined=false\r\n");
+            dos.flush();
+		} catch(IOException e) {
+			log.error(e.getMessage());
+		}
+	}
 
 	private void response200Header(DataOutputStream dos) {
         try {
