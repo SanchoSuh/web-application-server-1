@@ -41,57 +41,44 @@ public class RequestHandler extends Thread {
 			User user;
 			HttpResponse response;
 			
-			if(request.getMethod().equals("GET")) {
-				log.debug("In case of HTTP GET");
-				file = request.getUrl();
-				
-				URLHandler urlHandler = new URLHandler(request);
-				
-				if(urlHandler.resolve().equals("root")) {
-					file = "/index.html";
-				}
-				
-				if(urlHandler.resolve().equals("user")) {
-					user = new User(request.getParam("userId"), request.getParam("password"), request.getParam("name"), request.getParam("email"));
-					log.debug(user.toString());
-				}
-				
-				
+			URLHandler urlHandler = new URLHandler(request);
+			String domain = urlHandler.resolve();
+			
+			if(domain.equals("root")) {
+				file = "/index.html";
 				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
 				DataOutputStream dos = new DataOutputStream(out);
 				
 				response = new HttpResponse("200", body.length, "text/html");
 				response.response(dos, body);
-				
 			}
 			
-			if(request.getMethod().equals("POST")) {
-				log.debug("In case of HTTP POST");
+			if(domain.equals("user")) {
+				UserController userController = new UserController(request);
+				log.debug(userController.toString());
 				
-				URLHandler urlHandler = new URLHandler(request);
+				file = userController.run();
+				
 				DataOutputStream dos = new DataOutputStream(out);
 				
-				if(urlHandler.resolve().equals("user")) {
-					user = new User(request.getParam("userId"), request.getParam("password"), request.getParam("name"), request.getParam("email"));
-					log.debug(user.toString());
+				if(!file.startsWith("redirect:")) {
+					byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
+					response = new HttpResponse("200", body.length, "text/html");
+					response.response(dos, body);
+				} else {
+					int index = file.indexOf(":");
+					String subFile = file.substring(index + 1);
 					
 					response = new HttpResponse("302");
-					response.redirect(dos, "/");
+					response.redirect(dos, subFile);
 				}
+				
 			}
 			
-			/*
-			byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-			DataOutputStream dos = new DataOutputStream(out);
-			
-			response = new HttpResponse("200", body.length, "text/html");
-			response.response(dos, body);
-			*/
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	}
-	
 	
 	private String readHttpMessage(BufferedReader br) {
 

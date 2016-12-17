@@ -1,6 +1,10 @@
 package webserver;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class URLHandler {
+	private static final Logger log = LoggerFactory.getLogger(URLHandler.class);
 	private String url;
 		
 	public URLHandler(HttpRequest request) {
@@ -11,7 +15,7 @@ public class URLHandler {
 		if(this.url.equals("/"))
 			return "root";
 		
-		if(this.url.startsWith("/user/create"))
+		if(this.url.startsWith("/user"))
 			return "user";
 		
 		return "";
