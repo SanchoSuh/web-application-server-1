@@ -18,6 +18,9 @@ public class URLHandler {
 		if(this.url.startsWith("/user"))
 			return "user";
 		
+		if(this.url.startsWith("/css"))
+			return "css";
+		
 		return "";
 	}
 	

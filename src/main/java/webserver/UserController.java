@@ -36,14 +36,14 @@ public class UserController {
 		if(this.request.getMethod().equals("POST")) {
 			
 			if(this.subDomainString.startsWith("/create")) {
-				returnURL = userSignUp();
+				returnURL = handleUserSignUp();
 			}
 		}
 				
 		return returnURL;
 	}
 	
-	private String userSignUp() {
+	private String handleUserSignUp() {
 		log.debug("User SignUp");
 		User user = new User(request.getParam("userId"), request.getParam("password"), request.getParam("name"), request.getParam("email"));
 		log.debug("User instance created : " + user.toString());

@@ -69,4 +69,8 @@ public class HttpResponse {
             log.error(e.getMessage());
         }
     }
+    
+    public String toString() {
+    	return "Content-type : " + this.contentType + ", Content-length : " + this.contentLength;
+    }
 }

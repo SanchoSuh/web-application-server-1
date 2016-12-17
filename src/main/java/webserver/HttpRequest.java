@@ -12,7 +12,7 @@ import util.HttpRequestUtils;
 import util.IOUtils;
 
 public class HttpRequest {
-	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
+	private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 	
 	private String method;
 	private String url;
@@ -36,7 +36,7 @@ public class HttpRequest {
 			String readLine = br.readLine();
 						
 			while(!"".equals(readLine)) {
-				log.debug(readLine);
+				//log.debug(readLine);
 				String[] tokens = readLine.split(" ");
 				
 				if(tokens[0].equals("GET")) {					
@@ -56,14 +56,13 @@ public class HttpRequest {
 				readLine = br.readLine();
 			}
 			
-			log.debug("Here, out of while");
 			
 			if(this.method.equals("POST")) {
 				//readLine = br.readLine();
 				//log.debug(readLine);
 				
 				body = IOUtils.readData(br, this.contentLength);
-				log.debug(body);
+				//log.debug(body);
 				this.params = HttpRequestUtils.parseQueryString(body);
 			}
 		}catch (IOException e) {

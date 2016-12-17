@@ -15,6 +15,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import db.DataBase;
 import model.User;
 import util.HttpRequestUtils;
 
@@ -22,6 +23,7 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
+    private DataBase db;
     
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
@@ -38,7 +40,7 @@ public class RequestHandler extends Thread {
 			HttpRequest request = new HttpRequest(br);
 			
 			String file = "";
-			User user;
+			String contentType = "";
 			HttpResponse response;
 			
 			URLHandler urlHandler = new URLHandler(request);
@@ -47,12 +49,13 @@ public class RequestHandler extends Thread {
 			if(domain.equals("root")) {
 				file = "/index.html";
 				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-				DataOutputStream dos = new DataOutputStream(out);
+				contentType = getContentType(file);
+				response = new HttpResponse("200", body.length, contentType);
 				
-				response = new HttpResponse("200", body.length, "text/html");
+				DataOutputStream dos = new DataOutputStream(out);
 				response.response(dos, body);
 			}
-			
+				
 			if(domain.equals("user")) {
 				UserController userController = new UserController(request);
 				log.debug(userController.toString());
@@ -63,88 +66,45 @@ public class RequestHandler extends Thread {
 				
 				if(!file.startsWith("redirect:")) {
 					byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
-					response = new HttpResponse("200", body.length, "text/html");
+					contentType = getContentType(file);
+					response = new HttpResponse("200", body.length, contentType);
 					response.response(dos, body);
+					
+					//log.debug(response.toString());
 				} else {
 					int index = file.indexOf(":");
 					String subFile = file.substring(index + 1);
 					
 					response = new HttpResponse("302");
 					response.redirect(dos, subFile);
+					//log.debug(response.toString());
 				}
 				
+			}
+			
+			if(domain.equals("css")) {
+				file = request.getUrl();
+				
+				byte[] body = Files.readAllBytes(new File("./webapp"+file).toPath());
+				contentType = getContentType(file);
+				response = new HttpResponse("200", body.length, contentType);
+				
+				DataOutputStream dos = new DataOutputStream(out);
+				response.response(dos, body);
 			}
 			
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	}
-	
-	private String readHttpMessage(BufferedReader br) {
 
-		String parsedLine = null;
-		
-		try {
-			String line = br.readLine();
-			log.debug(line);
-			
-			while(!"".equals(line)) {
-				parsedLine = parseLine(line);
-				log.debug(parsedLine);
-				
-				if(parsedLine.contains("/user/create")) {
-					int index = parsedLine.indexOf("?");
-					String queryString = parsedLine.substring(index + 1);
-					Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
-					log.debug(queryString);
+	private String getContentType(String file) {
+		if(file.startsWith("/css/"))
+			return "text/css";
+		if(file.startsWith("/js/"))
+			return "application/javascript";
 					
-					User user = new User(params);
-					System.out.println("#### Here #####" + user.getUserId() + " " + user.getName() + " " + user.getEmail());
-				}
-				if(parsedLine != null) {
-					return parsedLine;
-				}
-				line = br.readLine();
-			}
-		} catch(IOException e) {
-			log.debug(e.getMessage());
-		}		
-		
-		return null;
+		return "text/html";
 	}
 	
-	private String parseLine(String line) {
-		String[] tokens = line.split(" ");
-			
-		for(int i=0 ; i < tokens.length ; i++) {
-			log.debug(tokens[i]);
-			
-			if(tokens[i].equals("GET")) {
-				return tokens[i+1];
-			}
-		}
-		
-		return null;
-	}
-
-
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
-        try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
-            dos.writeBytes("\r\n");
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private void responseBody(DataOutputStream dos, byte[] body) {
-        try {
-            dos.write(body, 0, body.length);
-            dos.flush();
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
 }
