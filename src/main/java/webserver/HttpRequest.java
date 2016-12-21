@@ -2,6 +2,9 @@ package webserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -21,19 +24,20 @@ public class HttpRequest {
 	private int contentLength;
 	private String body;
 	
-	public static boolean loginCookie;
+	public static boolean loginCookie = false;
 	
 	public HttpRequest(String method, String url, int returnCode, Map<String, String> params, int contentLength, String body) {
 		this.method = method;
 		this.url = url;
 		this.returnCode = returnCode;
-		this.loginCookie = false;
 		this.params = params;
 		this.contentLength = contentLength;
 		this.body = body;
 	}
 	
-	public HttpRequest(BufferedReader br) {
+	public HttpRequest(InputStream in) {
+		Reader reader = new InputStreamReader(in);
+		BufferedReader br = new BufferedReader(reader);
 		
 		try {
 			String readLine = br.readLine();
