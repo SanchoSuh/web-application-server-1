@@ -1,4 +1,4 @@
-# Developing an Web Application Server (mimicing Servlet with Java)
+# Developing an Web Application Server in Java (mimicing Servlet)
 * Sign-up, Login, cookie-based auth check
 * HttpRequest & HttpReponse
 * URL mapping (Servlet)
